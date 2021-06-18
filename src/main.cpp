@@ -11,28 +11,14 @@
 //CONFIGURACION DE SENSORES Y ACTUADORES
 struct Config                               //PINS-INPUTS (json construct setup)
 {
-  float sensor1;
-  int sensor2;
+  float temp;
+  float hum;
+  int ledstate;
 };
 Config config;
 
 //PINS-OUTPUTS
 #define led 2
-
-/*******************************___IMPORTANTE______*****************************
-Relacione la posición de su widget tipo OUTPUT, con una variable tipo entero
-Ejemplo: Array[0,1,2,3,4,...,n]
-int btn1 = 4
-int(entero) btn1(se usará en process_actuators())=4(posicion del widget en el template)
-
-RECUERDE: EL DASHBOARDO IOTPORJECTS SE COMPONE DE WIDGETS,CADA WIDGET ES RECIBIDO
-POR ESTE DISPOSITIVO EN UN ARRAY, CUYA POSICIÓN YA ESTÁ DEFINIDA DESDE LA CREACIÓN
-DEL TEMPLATE
-*******************************************************************************/
-
-//RELACION DE WIDGETS TIPO OUTPUT
-int btnon = 2;                                         //posición 2 del template
-int btnoff = 3;                                        //posición 3 del template
 
 //Functions definitions
 void sendToDashboard(const Config & config);
@@ -49,25 +35,22 @@ void print_stats();
 void clear();
 
 
-//CONFIGURACION ENVIO A BASE DE DATOS
-const long sendToDBInterval = 300000;
-
 //Global Vars
 WiFiClient espclient;
 PubSubClient client(espclient);
 Splitter splitter;
+DynamicJsonDocument mqtt_data_doc(2048);
+
 long lastReconnectAttemp = 0;
 long varsLastSend[20];
 String last_received_msg = "";
 String last_received_topic = "";
-int prev_temp = 0;
-int prev_hum = 0;
 long lastStats = 0;
-
-DynamicJsonDocument mqtt_data_doc(2048);
+long lastsendToDB = 0;
 
 // Start Subroutines
 #include <iotcrv2-conector.h>
+
 
 //_________________________________SET-UP_______________________________________
 void setup()
@@ -114,7 +97,7 @@ void loop()
   check_mqtt_connection();
   client.loop();
   process_sensors();
-  send_data_to_broker();
+  sendToDashboard(config);
   print_stats();
 }
 
@@ -122,40 +105,62 @@ void loop()
 //________________________________SENSORES ⤵____________________________________
 void process_sensors()
 {
-  //get sensor1 simulation
-  config.sensor1 = random(1, 100);
-  //get sensor1 simulation
-  config.sensor2 = random(1, 50);
+  //get temperature simulation
+  config.temp = random(1, 100);
+  //get humidity simulation
+  config.hum = random(1, 50);
 
-  sendToDashboard(config);
+  //get led status
+  mqtt_data_doc["variables"][6]["last"]["value"] = (HIGH == digitalRead(led));
+
 }
 
 
 //________________________PUBLICAR EN IoTPROJECTS ⤵_____________________________
 void sendToDashboard(const Config & config)
 {
+  if (!(millis() - lastsendToDB > sendDBInterval))
+  {
 //*********************CADA POSICIÓN ES UN WIDGET QUE CREASTE*******************
-                                                       //posición 0 del template
-  mqtt_data_doc["variables"][0]["last"]["value"] = config.sensor1;
+
+
+    mqtt_data_doc["variables"][0]["last"]["value"] = config.temp;
                                                        //posición 1 del template
-  mqtt_data_doc["variables"][1]["last"]["value"] = config.sensor2;
+    mqtt_data_doc["variables"][1]["last"]["value"] = config.hum;
+                                                       //posición 2 del template
+    mqtt_data_doc["variables"][2]["last"]["value"] = config.temp;
+                                                       //posición 3 del template
+    mqtt_data_doc["variables"][3]["last"]["value"] = config.hum;
+
+
+//******************************************************************************
+    send_data_to_broker();
+  }
+  else
+  {
+    Serial.println("ENVIANDO A BASE DE DATOS");
+   send_data_to_DB();
+   lastsendToDB = millis();
+  }
 }
 
 
 //________________________________ACTUADORES ⤵__________________________________
 void process_actuators()
 {
-  if (mqtt_data_doc["variables"][3]["last"]["value"] == "true")
+  if (mqtt_data_doc["variables"][4]["last"]["value"] == "true")
+                                                       //posición 4 del template
   {
     digitalWrite(led, HIGH);
-    mqtt_data_doc["variables"][3]["last"]["value"] = "";
-    varsLastSend[4] = 0;
+    mqtt_data_doc["variables"][4]["last"]["value"] = "";
+    varsLastSend[6] = 0;                               //posición 6 del template
   }
-  else if (mqtt_data_doc["variables"][4]["last"]["value"] == "false")
+  else if (mqtt_data_doc["variables"][5]["last"]["value"] == "false")
+                                                       //posición 4 del template
   {
     digitalWrite(led, LOW);
-    mqtt_data_doc["variables"][4]["last"]["value"] = "";
-    varsLastSend[4] = 0;
+    mqtt_data_doc["variables"][5]["last"]["value"] = "";
+    varsLastSend[6] = 0;                               //posición 6 del template
   }
 }
 
