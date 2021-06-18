@@ -1,10 +1,7 @@
-
-
-
-
 //________________________________OBTENER_CREDENCIALES ⤵________________________
 bool get_mqtt_credentials()
 {
+
 
   Serial.print( "\n\n\nGetting MQTT Credentials from WebHook ⤵");
   delay(1000);
@@ -92,6 +89,7 @@ void send_data_to_broker()
     if (now - varsLastSend[i] > freq * 1000)
     {
       varsLastSend[i] = millis();
+      mqtt_data_doc["variables"][i]["last"]["save"] = 0;
 
       String str_root_topic = mqtt_data_doc["topic"];
       String str_variable = mqtt_data_doc["variables"][i]["variable"];
@@ -112,6 +110,39 @@ void send_data_to_broker()
     }
   }
 }
+
+//______________________________________________________________________________
+void send_data_to_DB()
+{
+  long now = millis();
+
+  for (int i = 0; i < mqtt_data_doc["variables"].size(); i++)
+  {
+
+    if (mqtt_data_doc["variables"][i]["variableType"] == "output")
+    {
+      continue;
+    }
+
+    mqtt_data_doc["variables"][i]["last"]["save"] = 1;
+
+    String str_root_topic = mqtt_data_doc["topic"];
+    String str_variable = mqtt_data_doc["variables"][i]["variable"];
+    String topic = str_root_topic + str_variable + "/sdata";
+
+    String toSend = "";
+
+    serializeJson(mqtt_data_doc["variables"][i]["last"], toSend);
+    client.publish(topic.c_str(), toSend.c_str());
+    Serial.print(" Mqtt ENVIADO:) " );
+
+      //STATS
+    long counter = mqtt_data_doc["variables"][i]["counter"];
+    counter++;
+    mqtt_data_doc["variables"][i]["counter"] = counter;
+  }
+}
+
 
 //________________________________RECONNECT ⤵___________________________________
 bool reconnect()
