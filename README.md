@@ -20,4 +20,5 @@ PASO_3: Descargue este proyecto y en "USER-VARIABLES" complete la información c
 PASO_4: Gestione las lecturas de sus sensores con un constructor Json y envíelo como parametro a la función sendToDashboard(config);
 
 NOTA: ESTE PROYECTO YA INCLUYE DOS WIDGETS INPUT Y WIDGETS OUTPUTS COMO BASE DE APRENDIZAJE
+VIDEO TUTORIAL: https://youtu.be/_vzZYyu7I1c
 
