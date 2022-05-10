@@ -6,7 +6,7 @@ Base de código para ESP32 compatible con la plataforma IoTProjects.
 IoTProjects es una plataforma en la Nube para microcontroladores Arduino, ESP y cualquier dispositivo que soporte el protocolo MQTT.
 Su principal cualidad es que no depende de ningún servicio de terceros como Adafruit, Ubidots, Cayenne u otro.
 
-Aquí un DEMO: https://app.iotcostarica.ml/demologin
+Aquí un DEMO: http://dashboardiot.ruralcr.com/demologin
 
 
 ¿Como funciona?
